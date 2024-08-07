@@ -1,5 +1,6 @@
 import birl
 import gleam/bit_array
+import gleam/iterator
 import gleam/list
 import gleam/string
 import gleam/uri.{type Uri}
@@ -56,4 +57,48 @@ pub fn is_letter(char: String) -> Bool {
     "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
   ]
   |> list.contains(string.lowercase(char))
+}
+
+pub fn initialize_guess(char_array: List(#(String, Int))) -> List(String) {
+  char_array
+  |> list.map(fn(char: #(String, Int)) {
+    case is_letter(char.0 |> string.lowercase) {
+      True -> ""
+      False -> char.0
+    }
+  })
+}
+
+pub fn insert_char_at_index_in_list(
+  list: List(String),
+  item: String,
+  index: Int,
+) -> List(String) {
+  list
+  |> list.index_map(fn(x, i) {
+    case i == index {
+      True -> get_last_character(item)
+      False -> x
+    }
+  })
+}
+
+pub fn get_last_character(string: String) -> String {
+  string
+  |> string.to_graphemes()
+  |> list.last()
+  |> fn(x) {
+    case x {
+      Ok(last) -> last
+      _ -> ""
+    }
+  }
+  |> string.lowercase()
+}
+
+pub fn get_item_at_index(l: List(String), index: Int) -> String {
+  case list.drop(l, index) {
+    [head, ..] -> head
+    _ -> ""
+  }
 }
