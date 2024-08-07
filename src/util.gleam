@@ -42,3 +42,18 @@ pub fn decode(string: String) -> String {
     _ -> ""
   }
 }
+
+pub fn string_to_letter_frequency(string: String) -> List(#(String, Int)) {
+  let char_array = string |> string.to_graphemes()
+  list.map(char_array, fn(character) {
+    #(character, list.count(char_array, fn(x) { x == character }))
+  })
+}
+
+pub fn is_letter(char: String) -> Bool {
+  [
+    "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o",
+    "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
+  ]
+  |> list.contains(string.lowercase(char))
+}
