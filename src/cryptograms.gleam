@@ -1,8 +1,8 @@
 import answers.{get_random_answer}
 import gleam/int
 import gleam/io
-import gleam/list
 import gleam/option.{None}
+import gleam/string
 import gleam/uri.{type Uri}
 import lustre
 import lustre/effect.{type Effect}
@@ -10,7 +10,7 @@ import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
 import modem
-import util.{get_initial_route, get_unix_time_now, parse_path}
+import util.{decode, get_initial_route, get_unix_time_now}
 
 pub fn main() {
   let app = lustre.application(init, update, view)
@@ -40,7 +40,8 @@ fn init(_flags) -> #(Model, Effect(Msg)) {
   io.debug(initial_route)
 
   case initial_route {
-    "localhost:1234" -> redirect_to_valid_puzzle()
+    "localhost:1234" | "cryptograms.usingthe.computer" ->
+      redirect_to_valid_puzzle()
     _ -> #(compute_route(initial_route), modem.init(on_url_change))
   }
 }
@@ -70,7 +71,7 @@ fn compute_route(route: String) -> Model {
     solve_time: 0,
     solved: False,
     guess: "",
-    answer: route <> "1",
+    answer: decode(route),
   )
 }
 

@@ -1,5 +1,7 @@
 import birl
+import gleam/bit_array
 import gleam/list
+import gleam/string
 import gleam/uri.{type Uri}
 import modem
 
@@ -26,6 +28,17 @@ pub fn get_initial_route() -> String {
 
   case initial_uri {
     Ok(route) -> parse_path(route)
+    _ -> ""
+  }
+}
+
+pub fn decode(string: String) -> String {
+  case bit_array.base64_decode(string) {
+    Ok(decoded) ->
+      case bit_array.to_string(decoded) {
+        Ok(decoded_string) -> decoded_string
+        _ -> ""
+      }
     _ -> ""
   }
 }
