@@ -1,6 +1,6 @@
 import birl
 import gleam/bit_array
-import gleam/iterator
+import gleam/io
 import gleam/list
 import gleam/string
 import gleam/uri.{type Uri}
@@ -20,6 +20,25 @@ pub fn parse_path(uri: Uri) -> String {
     case x {
       Ok(i) -> i
       Error(_) -> ""
+    }
+  }
+}
+
+pub type Mode {
+  Play
+  Share
+}
+
+pub fn determine_mode_from_uri(uri: Uri) -> Mode {
+  uri
+  |> uri.to_string()
+  |> uri.path_segments()
+  |> list.first()
+  |> fn(x) {
+    case x {
+      Ok("play") -> Play
+      Ok("share") -> Share
+      Ok(_) | Error(_) -> Play
     }
   }
 }
@@ -69,20 +88,6 @@ pub fn initialize_guess(char_array: List(#(String, Int))) -> List(String) {
   })
 }
 
-pub fn insert_char_at_index_in_list(
-  list: List(String),
-  item: String,
-  index: Int,
-) -> List(String) {
-  list
-  |> list.index_map(fn(x, i) {
-    case i == index {
-      True -> get_last_character(item)
-      False -> x
-    }
-  })
-}
-
 pub fn get_last_character(string: String) -> String {
   string
   |> string.to_graphemes()
@@ -101,4 +106,35 @@ pub fn get_item_at_index(l: List(String), index: Int) -> String {
     [head, ..] -> head
     _ -> ""
   }
+}
+
+pub fn find_indexes_of_matching_chars(
+  answer_list: List(#(String, Int)),
+  index: Int,
+) -> List(Int) {
+  let answer_list_with_chars_only = list.map(answer_list, fn(item) { item.0 })
+  let indexed_char = get_item_at_index(answer_list_with_chars_only, index)
+  list.index_map(answer_list_with_chars_only, fn(item: String, index: Int) {
+    #(item, index)
+  })
+  |> list.key_filter(indexed_char)
+}
+
+pub fn replace_all_matching_chars_with_new_char(
+  answer_list: List(#(String, Int)),
+  guess: List(String),
+  index: Int,
+  new_char: String,
+) -> List(String) {
+  let indexes_to_replace = find_indexes_of_matching_chars(answer_list, index)
+  list.index_map(guess, fn(item: String, index: Int) {
+    case list.contains(indexes_to_replace, index) {
+      True -> get_last_character(new_char)
+      False -> item
+    }
+  })
+}
+
+pub fn check_if_solved(guess: List(String), answer: String) {
+  guess == answer |> string.to_graphemes()
 }

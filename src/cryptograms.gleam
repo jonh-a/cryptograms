@@ -14,9 +14,9 @@ import lustre/ui
 import modem
 import puzzles.{get_random_answer}
 import util.{
-  decode, get_initial_route, get_item_at_index, get_last_character,
-  get_unix_time_now, initialize_guess, insert_char_at_index_in_list, is_letter,
-  string_to_letter_frequency,
+  check_if_solved, decode, get_initial_route, get_item_at_index,
+  get_last_character, get_unix_time_now, initialize_guess, is_letter,
+  replace_all_matching_chars_with_new_char, string_to_letter_frequency,
 }
 
 pub fn main() {
@@ -29,7 +29,7 @@ pub fn main() {
 type Model {
   Model(
     current_route: String,
-    char_array: List(#(String, Int)),
+    char_list: List(#(String, Int)),
     answer: String,
     guess: List(String),
     selected_char: String,
@@ -62,7 +62,12 @@ fn on_url_change(_: Uri) -> Msg {
 
 fn handle_button_click(model: Model) -> Model {
   case model.solved {
-    False -> Model(..model, solve_time: get_unix_time_now(), solved: True)
+    False ->
+      case check_if_solved(model.guess, model.answer) {
+        True -> Model(..model, solve_time: get_unix_time_now(), solved: True)
+        False -> Model(..model)
+      }
+
     True ->
       Model(
         ..model,
@@ -75,16 +80,16 @@ fn handle_button_click(model: Model) -> Model {
 
 fn compute_model(route: String) -> Model {
   let decoded = decode(route)
-  let char_array = string_to_letter_frequency(decoded)
+  let char_list = string_to_letter_frequency(decoded)
 
   Model(
     current_route: route,
     start_time: get_unix_time_now(),
-    char_array: char_array,
+    char_list: char_list,
     selected_char: "",
     solve_time: 0,
     solved: False,
-    guess: initialize_guess(char_array),
+    guess: initialize_guess(char_list),
     answer: decoded,
   )
 }
@@ -95,7 +100,12 @@ fn handle_user_guessed_character(model: Model, key: String, index: Int) -> Model
     True, _ | False, "" ->
       Model(
         ..model,
-        guess: insert_char_at_index_in_list(model.guess, key, index),
+        guess: replace_all_matching_chars_with_new_char(
+          model.char_list,
+          model.guess,
+          index,
+          key,
+        ),
       )
     False, _ -> Model(..model)
   }
@@ -141,13 +151,16 @@ fn view(model: Model) -> Element(Msg) {
       False -> ""
     }
       |> element.text(),
-    html.div(
+    ui.centre(
       [],
-      list.index_map(model.char_array, fn(char: #(String, Int), index: Int) {
-        show_char(model, char, index)
-      }),
+      ui.cluster(
+        [],
+        list.index_map(model.char_list, fn(char: #(String, Int), index: Int) {
+          show_char(model, char, index)
+        }),
+      ),
     ),
-    html.button([event.on_click(UserClickedSubmit)], [element.text(button_text)]),
+    ui.button([event.on_click(UserClickedSubmit)], [element.text(button_text)]),
   ])
 }
 
@@ -159,21 +172,22 @@ fn show_char(model: Model, char: #(String, Int), index: Int) {
 
   case is_letter(char.0) {
     True ->
-      html.span([], [
+      ui.field(
+        [],
+        [],
         ui.input([
+          attribute.autocomplete("off"),
           attribute.id(index |> int.to_string()),
-          event.on_input(fn(key: String) { UserGuessedCharacter(key, index) }),
           attribute.value(model.guess |> get_item_at_index(index)),
+          event.on_input(fn(key: String) { UserGuessedCharacter(key, index) }),
           event.on_click(UserClickedCharacter(char.0)),
           attribute.style([
             #("background-color", background_color),
-            #("width", "1em"),
+            #("width", "2.5em"),
           ]),
         ]),
-        html.label([attribute.for(index |> int.to_string())], [
-          element.text(char.1 |> int.to_string()),
-        ]),
-      ])
+        [element.text(char.1 |> int.to_string())],
+      )
     False -> html.span([], [element.text(char.0)])
   }
 }
