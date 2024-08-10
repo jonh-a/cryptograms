@@ -15,7 +15,8 @@ import modem
 import puzzles.{get_random_answer}
 import util.{
   check_if_solved, decode, get_initial_route, get_item_at_index,
-  get_last_character, get_unix_time_now, initialize_guess, is_letter,
+  get_last_character, get_space_delimited_char_list_with_indexes,
+  get_unix_time_now, initialize_guess, is_letter,
   replace_all_matching_chars_with_new_char, string_to_letter_frequency,
 }
 
@@ -30,6 +31,7 @@ type Model {
   Model(
     current_route: String,
     char_list: List(#(String, Int)),
+    space_delimited_char_list_with_indexes: List(List(#(String, Int, Int))),
     answer: String,
     guess: List(String),
     selected_char: String,
@@ -86,6 +88,9 @@ fn compute_model(route: String) -> Model {
     current_route: route,
     start_time: get_unix_time_now(),
     char_list: char_list,
+    space_delimited_char_list_with_indexes: get_space_delimited_char_list_with_indexes(
+      char_list,
+    ),
     selected_char: "",
     solve_time: 0,
     solved: False,

@@ -138,3 +138,57 @@ pub fn replace_all_matching_chars_with_new_char(
 pub fn check_if_solved(guess: List(String), answer: String) {
   guess == answer |> string.to_graphemes()
 }
+
+pub fn get_space_delimited_char_list_with_indexes(
+  char_list: List(#(String, Int)),
+) -> List(List(#(String, Int, Int))) {
+  char_list
+  |> get_char_list_with_index()
+  |> chunk_on_space()
+}
+
+fn get_char_list_with_index(char_list: List(#(String, Int))) {
+  add_index_to_char(char_list, [], 0)
+}
+
+fn add_index_to_char(
+  char_list: List(#(String, Int)),
+  acc: List(#(String, Int, Int)),
+  index: Int,
+) {
+  case char_list {
+    [head, ..tail] ->
+      add_index_to_char(
+        tail,
+        list.append(acc, [#(head.0, head.1, index)]),
+        index + 1,
+      )
+    [] -> acc
+  }
+}
+
+fn chunk_on_space(
+  input_list: List(#(String, Int, Int)),
+) -> List(List(#(String, Int, Int))) {
+  chunk_on_space_helper(input_list, [[]])
+}
+
+fn chunk_on_space_helper(
+  input_list: List(#(String, Int, Int)),
+  acc: List(List(#(String, Int, Int))),
+) -> List(List(#(String, Int, Int))) {
+  case input_list {
+    [] -> acc |> list.reverse |> list.map(list.reverse)
+    [head, ..tail] ->
+      case head {
+        #(" ", _, _) -> chunk_on_space_helper(tail, [[], ..acc])
+        _ -> {
+          let updated_acc = case acc {
+            [current_chunk, ..rest] -> [[head, ..current_chunk], ..rest]
+            _ -> acc
+          }
+          chunk_on_space_helper(tail, updated_acc)
+        }
+      }
+  }
+}
