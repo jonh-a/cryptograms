@@ -1,16 +1,11 @@
+import data/model.{type Model, Model}
+import data/msg.{type Msg}
 import gleam/int
 import gleam/io
-import gleam/list
-import gleam/result
 import gleam/string
 import lustre
-import lustre/attribute
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
-import lustre/element/html
-import lustre/event
-import lustre/ui
-import model.{type Model, Model}
 import puzzles.{get_random_answer}
 import util.{
   check_if_solved, decode, get_item_at_index, get_last_character,
@@ -18,6 +13,8 @@ import util.{
   initialize_guess, is_letter, move_to_next_field, provide_hint,
   replace_all_matching_chars_with_new_char, string_to_letter_frequency,
 }
+import view/cryptogram.{show_cryptogram}
+import view/solved.{show_solved}
 
 pub fn main() {
   let app = lustre.application(init, update, view)
@@ -72,15 +69,21 @@ fn compute_model(puzzle: #(String, String)) -> Model {
 fn handle_user_guessed_character(model: Model, key: String, index: Int) -> Model {
   let key_pressed_was_letter = key |> get_last_character() |> is_letter()
 
-  case key_pressed_was_letter {
+  let next_input_id = case key_pressed_was_letter {
     True -> move_to_next_field(index + 1 |> int.to_string())
     _ -> move_to_next_field(index |> int.to_string())
   }
+
+  io.debug(next_input_id)
+
+  let new_selected_char =
+    model.answer |> string.to_graphemes() |> get_item_at_index(next_input_id)
 
   case key_pressed_was_letter, key {
     True, _ | False, "" ->
       Model(
         ..model,
+        selected_char: new_selected_char,
         guess: replace_all_matching_chars_with_new_char(
           model.char_list,
           model.guess,
@@ -118,26 +121,18 @@ fn handle_user_requested_hint(model: Model) -> #(Model, Effect(Msg)) {
 
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
-    UserClickedSubmit -> #(handle_button_click(model), effect.none())
-    UserGuessedCharacter(value, index) -> #(
+    msg.UserClickedSubmit -> #(handle_button_click(model), effect.none())
+    msg.UserGuessedCharacter(value, index) -> #(
       handle_user_guessed_character(model, value, index),
       effect.none(),
     )
-    UserFocusedCharacter(char) -> #(
+    msg.UserFocusedCharacter(char) -> #(
       handle_user_focused_character(model, char),
       effect.none(),
     )
-    UserClickedPlayAnother -> handle_user_clicked_play_another()
-    UserRequestedHint -> handle_user_requested_hint(model)
+    msg.UserClickedPlayAnother -> handle_user_clicked_play_another()
+    msg.UserRequestedHint -> handle_user_requested_hint(model)
   }
-}
-
-type Msg {
-  UserClickedSubmit
-  UserClickedPlayAnother
-  UserFocusedCharacter(char: String)
-  UserGuessedCharacter(value: String, index: Int)
-  UserRequestedHint
 }
 
 fn view(model: Model) -> Element(Msg) {
@@ -147,156 +142,4 @@ fn view(model: Model) -> Element(Msg) {
     True -> show_solved(model)
     False -> show_cryptogram(model)
   }
-}
-
-fn show_solved(model: Model) -> Element(Msg) {
-  let solved_time = model.solve_time - model.start_time
-  ui.centre(
-    [],
-    html.div([], [
-      html.h1([], [element.text(model.answer)]),
-      html.h2([], [
-        element.text("solved in " <> int.to_string(solved_time) <> " seconds"),
-      ]),
-      ui.button([event.on_click(UserClickedPlayAnother)], [
-        element.text("play another"),
-      ]),
-    ]),
-  )
-}
-
-fn show_cryptogram(model: Model) -> Element(Msg) {
-  let hint_button_text = case model.hints < 5 {
-    True -> "hint"
-    False -> ":-("
-  }
-
-  ui.centre(
-    [attribute.style([#("display", "flex")])],
-    html.div(
-      [attribute.style([#("padding-left", "3em"), #("padding-right", "3em")])],
-      [
-        html.h1(
-          [
-            attribute.style([
-              #("margin-left", "auto"),
-              #("margin-right", "auto"),
-            ]),
-          ],
-          [element.text("quote by: " <> model.author)],
-        ),
-        case model.solved {
-          True -> int.to_string(model.solve_time - model.start_time)
-          False -> ""
-        }
-          |> element.text(),
-        ui.centre(
-          [],
-          ui.cluster(
-            [],
-            list.map(
-              model.space_delimited_char_list_with_indexes,
-              fn(word: List(#(String, Int, Int))) { show_word(model, word) },
-            ),
-          ),
-        ),
-        ui.button([event.on_click(UserClickedSubmit)], [element.text("guess")]),
-        ui.button(
-          [
-            attribute.disabled(model.hints > 5),
-            event.on_click(UserRequestedHint),
-          ],
-          [element.text(hint_button_text)],
-        ),
-      ],
-    ),
-  )
-}
-
-fn show_word(model: Model, word: List(#(String, Int, Int))) -> Element(Msg) {
-  let space_index =
-    word
-    |> list.last()
-    |> result.unwrap(#("", 0, 0))
-    |> fn(x: #(String, Int, Int)) { x.2 }
-
-  ui.cluster(
-    [],
-    list.append(
-      list.map(word, fn(char: #(String, Int, Int)) { show_char(model, char) }),
-      [show_space(space_index)],
-    ),
-  )
-}
-
-fn show_char(model: Model, char: #(String, Int, Int)) -> Element(Msg) {
-  let index = char.2
-  let background_color = case model.selected_char == char.0 {
-    True -> "yellow"
-    False -> "none"
-  }
-
-  case is_letter(char.0) {
-    True ->
-      html.div([attribute.style([#("background-color", "lightgray")])], [
-        ui.field(
-          [],
-          [],
-          ui.input([
-            attribute.autocomplete("off"),
-            attribute.id(index |> int.to_string()),
-            attribute.value(model.guess |> get_item_at_index(index)),
-            event.on_input(fn(key: String) { UserGuessedCharacter(key, index) }),
-            event.on_focus(UserFocusedCharacter(char.0)),
-            attribute.style([
-              #("background-color", background_color),
-              #("font-size", ".9em"),
-              #("width", "2.5em"),
-              #("text-align", "center"),
-              #("height", "2em"),
-            ]),
-          ]),
-          [show_char_clue(char)],
-        ),
-      ])
-
-    False ->
-      html.span(
-        [attribute.style([#("margin-top", "auto"), #("height", "100%")])],
-        [element.text(char.0)],
-      )
-  }
-}
-
-fn show_char_clue(char: #(String, Int, Int)) -> Element(Msg) {
-  html.div(
-    [
-      attribute.style([
-        #("display", "flex"),
-        #("flex-direction", "column"),
-        #("align-items", "center"),
-        #("margin-right", "auto"),
-        #("margin-left", "auto"),
-      ]),
-    ],
-    [
-      html.p(
-        [
-          attribute.style([
-            #("color", "black"),
-            #("margin-bottom", "-.3em"),
-            #("font-size", ".75em"),
-          ]),
-        ],
-        [element.text("A")],
-      ),
-      html.p([attribute.style([#("color", "black"), #("font-size", ".6em")])], [
-        element.text(char.1 |> int.to_string()),
-      ]),
-    ],
-  )
-}
-
-fn show_space(index: Int) -> Element(Msg) {
-  html.span([attribute.style([#("padding-left", "1em")])], [element.text(" ")])
 }

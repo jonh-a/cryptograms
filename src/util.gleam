@@ -203,4 +203,4 @@ pub fn provide_hint(
 }
 
 @external(javascript, "./cryptograms_ffi.mjs", "moveToNextField")
-pub fn move_to_next_field(next_field_id: String) -> Nil
+pub fn move_to_next_field(next_field_id: String) -> Int

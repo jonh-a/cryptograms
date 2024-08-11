@@ -8,7 +8,7 @@ export function moveToNextField(nextFieldID) {
   for (let i = 0; i < inputs.length; i++) {
     if (inputs[i].value === '') {
       inputs[i].focus();
-      return;
+      return parseInt(inputs[i].id);
     }
   }
 }
