@@ -2,6 +2,8 @@ import data/model.{type Model, Model}
 import data/msg.{type Msg}
 import gleam/int
 import gleam/list
+import gleam/result
+import gleam/string
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
@@ -108,7 +110,7 @@ fn show_char(model: Model, char: #(String, Int, Int)) -> Element(Msg) {
                 #("height", "2em"),
               ]),
             ]),
-            [show_char_clue(char)],
+            [show_char_clue(model, char)],
           ),
         ],
       )
@@ -121,7 +123,7 @@ fn show_char(model: Model, char: #(String, Int, Int)) -> Element(Msg) {
   }
 }
 
-fn show_char_clue(char: #(String, Int, Int)) -> Element(Msg) {
+fn show_char_clue(model: Model, char: #(String, Int, Int)) -> Element(Msg) {
   html.div(
     [
       attribute.style([
@@ -141,7 +143,14 @@ fn show_char_clue(char: #(String, Int, Int)) -> Element(Msg) {
             #("font-size", ".75em"),
           ]),
         ],
-        [element.text("A")],
+        [
+          element.text(
+            model.shuffled_alphabet
+            |> list.key_find(char.0)
+            |> result.unwrap("")
+            |> string.uppercase(),
+          ),
+        ],
       ),
       html.p([attribute.style([#("color", "black"), #("font-size", ".6em")])], [
         element.text(char.1 |> int.to_string()),

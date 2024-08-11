@@ -9,7 +9,7 @@ import util.{
   get_space_delimited_char_list_with_indexes, get_unix_time_now,
   initialize_guess, is_letter, move_to_next_empty_field, move_to_next_field,
   move_to_previous_field, provide_hint, replace_all_matching_chars_with_new_char,
-  string_to_letter_frequency,
+  shuffle_alphabet, string_to_letter_frequency,
 }
 
 pub fn init(_flags) -> #(Model, Effect(Msg)) {
@@ -34,6 +34,7 @@ pub fn compute_model(puzzle: #(String, String)) -> Model {
     guess: initialize_guess(char_list),
     answer: decoded,
     hints: 0,
+    shuffled_alphabet: shuffle_alphabet(),
   )
 }
 

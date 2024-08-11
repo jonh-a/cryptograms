@@ -16,5 +16,6 @@ pub type Model {
     solve_time: Int,
     // number of hints used
     hints: Int,
+    shuffled_alphabet: List(#(String, String)),
   )
 }

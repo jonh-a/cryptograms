@@ -201,6 +201,12 @@ pub fn provide_hint(
   )
 }
 
+pub fn shuffle_alphabet() -> List(#(String, String)) {
+  let alphabet = alphabet()
+  let shuffled = list.shuffle(alphabet)
+  list.zip(alphabet, shuffled)
+}
+
 @external(javascript, "./cryptograms_ffi.mjs", "moveToNextEmptyField")
 pub fn move_to_next_empty_field(next_field_id: String) -> Int
 
