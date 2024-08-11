@@ -201,5 +201,11 @@ pub fn provide_hint(
   )
 }
 
+@external(javascript, "./cryptograms_ffi.mjs", "moveToNextEmptyField")
+pub fn move_to_next_empty_field(next_field_id: String) -> Int
+
 @external(javascript, "./cryptograms_ffi.mjs", "moveToNextField")
 pub fn move_to_next_field(next_field_id: String) -> Int
+
+@external(javascript, "./cryptograms_ffi.mjs", "moveToPreviousField")
+pub fn move_to_previous_field(next_field_id: String) -> Int

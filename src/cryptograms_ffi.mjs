@@ -1,4 +1,4 @@
-export function moveToNextField(nextFieldID) {
+export function moveToNextEmptyField(nextFieldID) {
   const inputs = Array.from(document
     .querySelectorAll('input'))
     .filter((input) => {
@@ -11,4 +11,27 @@ export function moveToNextField(nextFieldID) {
       return parseInt(inputs[i].id);
     }
   }
+}
+
+export function moveToNextField(nextFieldID) {
+  const inputs = Array.from(document
+    .querySelectorAll('input'))
+    .filter((input) => {
+      return parseInt(input.id) >= parseInt(nextFieldID)
+    });
+
+  inputs[0].focus()
+  return parseInt(inputs[0].id)
+}
+
+export function moveToPreviousField(currentFieldID) {
+  const inputs = Array.from(document
+    .querySelectorAll('input'))
+    .filter((input) => {
+      return parseInt(input.id) < parseInt(currentFieldID)
+    })
+    .reverse();
+
+  inputs[0].focus()
+  return parseInt(inputs[0].id)
 }

@@ -96,6 +96,9 @@ fn show_char(model: Model, char: #(String, Int, Int)) -> Element(Msg) {
               event.on_input(fn(key: String) {
                 msg.UserGuessedCharacter(key, index)
               }),
+              event.on_keydown(fn(key: String) {
+                msg.UserPressedKey(key, index)
+              }),
               event.on_focus(msg.UserFocusedCharacter(char.0)),
               attribute.style([
                 #("background-color", background_color),

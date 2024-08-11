@@ -3,5 +3,6 @@ pub type Msg {
   UserClickedPlayAnother
   UserFocusedCharacter(char: String)
   UserGuessedCharacter(value: String, index: Int)
+  UserPressedKey(key: String, index: Int)
   UserRequestedHint
 }
