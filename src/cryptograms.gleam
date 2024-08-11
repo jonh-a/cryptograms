@@ -116,7 +116,7 @@ fn handle_user_guessed_character(model: Model, key: String, index: Int) -> Model
   }
 }
 
-fn handle_user_clicked_character(model: Model, char: String) -> Model {
+fn handle_user_focused_character(model: Model, char: String) -> Model {
   Model(..model, selected_char: char)
 }
 
@@ -128,8 +128,8 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       handle_user_guessed_character(model, value, index),
       effect.none(),
     )
-    UserClickedCharacter(char) -> #(
-      handle_user_clicked_character(model, char),
+    UserFocusedCharacter(char) -> #(
+      handle_user_focused_character(model, char),
       effect.none(),
     )
   }
@@ -138,7 +138,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 type Msg {
   OnRouteChange(String)
   UserClickedSubmit
-  UserClickedCharacter(char: String)
+  UserFocusedCharacter(char: String)
   UserGuessedCharacter(value: String, index: Int)
 }
 
@@ -201,7 +201,7 @@ fn show_char(model: Model, char: #(String, Int, Int)) {
           attribute.id(index |> int.to_string()),
           attribute.value(model.guess |> get_item_at_index(index)),
           event.on_input(fn(key: String) { UserGuessedCharacter(key, index) }),
-          event.on_click(UserClickedCharacter(char.0)),
+          event.on_focus(UserFocusedCharacter(char.0)),
           attribute.style([
             #("background-color", background_color),
             #("width", "2.5em"),
