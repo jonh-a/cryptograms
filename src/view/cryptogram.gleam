@@ -2,7 +2,6 @@ import data/model.{type Model, Model}
 import data/msg.{type Msg}
 import gleam/int
 import gleam/list
-import gleam/result
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
@@ -61,17 +60,11 @@ pub fn show_cryptogram(model: Model) -> Element(Msg) {
 }
 
 fn show_word(model: Model, word: List(#(String, Int, Int))) -> Element(Msg) {
-  let space_index =
-    word
-    |> list.last()
-    |> result.unwrap(#("", 0, 0))
-    |> fn(x: #(String, Int, Int)) { x.2 }
-
   ui.cluster(
     [],
     list.append(
       list.map(word, fn(char: #(String, Int, Int)) { show_char(model, char) }),
-      [show_space(space_index)],
+      [show_space()],
     ),
   )
 }
@@ -154,6 +147,6 @@ fn show_char_clue(char: #(String, Int, Int)) -> Element(Msg) {
   )
 }
 
-fn show_space(index: Int) -> Element(Msg) {
+fn show_space() -> Element(Msg) {
   html.span([attribute.style([#("padding-left", "1em")])], [element.text(" ")])
 }
