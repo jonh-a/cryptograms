@@ -56,11 +56,15 @@ pub fn string_to_letter_frequency(string: String) -> List(#(String, Int)) {
   })
 }
 
-pub fn is_letter(char: String) -> Bool {
+fn alphabet() -> List(String) {
   [
     "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o",
     "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
   ]
+}
+
+pub fn is_letter(char: String) -> Bool {
+  alphabet()
   |> list.contains(string.lowercase(char))
 }
 

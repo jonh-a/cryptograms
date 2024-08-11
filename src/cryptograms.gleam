@@ -165,30 +165,44 @@ fn show_cryptogram(model: Model) -> Element(Msg) {
   }
 
   ui.centre(
-    [],
-    html.div([], [
-      html.h1([], [element.text("quote by: " <> model.author)]),
-      case model.solved {
-        True -> int.to_string(model.solve_time - model.start_time)
-        False -> ""
-      }
-        |> element.text(),
-      ui.centre(
-        [],
-        ui.cluster(
+    [attribute.style([#("display", "flex")])],
+    html.div(
+      [attribute.style([#("padding-left", "3em"), #("padding-right", "3em")])],
+      [
+        html.h1(
+          [
+            attribute.style([
+              #("margin-left", "auto"),
+              #("margin-right", "auto"),
+            ]),
+          ],
+          [element.text("quote by: " <> model.author)],
+        ),
+        case model.solved {
+          True -> int.to_string(model.solve_time - model.start_time)
+          False -> ""
+        }
+          |> element.text(),
+        ui.centre(
           [],
-          list.map(
-            model.space_delimited_char_list_with_indexes,
-            fn(word: List(#(String, Int, Int))) { show_word(model, word) },
+          ui.cluster(
+            [],
+            list.map(
+              model.space_delimited_char_list_with_indexes,
+              fn(word: List(#(String, Int, Int))) { show_word(model, word) },
+            ),
           ),
         ),
-      ),
-      ui.button([event.on_click(UserClickedSubmit)], [element.text("guess")]),
-      ui.button(
-        [attribute.disabled(model.hints > 5), event.on_click(UserRequestedHint)],
-        [element.text(hint_button_text)],
-      ),
-    ]),
+        ui.button([event.on_click(UserClickedSubmit)], [element.text("guess")]),
+        ui.button(
+          [
+            attribute.disabled(model.hints > 5),
+            event.on_click(UserRequestedHint),
+          ],
+          [element.text(hint_button_text)],
+        ),
+      ],
+    ),
   )
 }
 
@@ -211,24 +225,63 @@ fn show_char(model: Model, char: #(String, Int, Int)) -> Element(Msg) {
 
   case is_letter(char.0) {
     True ->
-      ui.field(
-        [],
-        [],
-        ui.input([
-          attribute.autocomplete("off"),
-          attribute.id(index |> int.to_string()),
-          attribute.value(model.guess |> get_item_at_index(index)),
-          event.on_input(fn(key: String) { UserGuessedCharacter(key, index) }),
-          event.on_focus(UserFocusedCharacter(char.0)),
-          attribute.style([
-            #("background-color", background_color),
-            #("width", "2.5em"),
+      html.div([attribute.style([#("background-color", "lightgray")])], [
+        ui.field(
+          [],
+          [],
+          ui.input([
+            attribute.autocomplete("off"),
+            attribute.id(index |> int.to_string()),
+            attribute.value(model.guess |> get_item_at_index(index)),
+            event.on_input(fn(key: String) { UserGuessedCharacter(key, index) }),
+            event.on_focus(UserFocusedCharacter(char.0)),
+            attribute.style([
+              #("background-color", background_color),
+              #("font-size", ".9em"),
+              #("width", "2.5em"),
+              #("text-align", "center"),
+              #("height", "2em"),
+            ]),
           ]),
-        ]),
-        [element.text(char.1 |> int.to_string())],
+          [show_char_clue(char)],
+        ),
+      ])
+
+    False ->
+      html.span(
+        [attribute.style([#("margin-top", "auto"), #("height", "100%")])],
+        [element.text(char.0)],
       )
-    False -> html.span([], [element.text(char.0)])
   }
+}
+
+fn show_char_clue(char: #(String, Int, Int)) -> Element(Msg) {
+  html.div(
+    [
+      attribute.style([
+        #("display", "flex"),
+        #("flex-direction", "column"),
+        #("align-items", "center"),
+        #("margin-right", "auto"),
+        #("margin-left", "auto"),
+      ]),
+    ],
+    [
+      html.p(
+        [
+          attribute.style([
+            #("color", "black"),
+            #("margin-bottom", "-.3em"),
+            #("font-size", ".75em"),
+          ]),
+        ],
+        [element.text("A")],
+      ),
+      html.p([attribute.style([#("color", "black"), #("font-size", ".6em")])], [
+        element.text(char.1 |> int.to_string()),
+      ]),
+    ],
+  )
 }
 
 fn show_space() -> Element(Msg) {
