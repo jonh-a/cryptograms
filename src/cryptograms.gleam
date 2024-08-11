@@ -149,6 +149,10 @@ fn view(model: Model) -> Element(Msg) {
     False -> "guess"
   }
 
+  show_cryptogram(model, button_text)
+}
+
+fn show_cryptogram(model: Model, button_text: String) {
   html.div([], [
     html.h1([], [element.text("Current route: " <> model.answer)]),
     case model.solved {
@@ -160,16 +164,28 @@ fn view(model: Model) -> Element(Msg) {
       [],
       ui.cluster(
         [],
-        list.index_map(model.char_list, fn(char: #(String, Int), index: Int) {
-          show_char(model, char, index)
-        }),
+        list.map(
+          model.space_delimited_char_list_with_indexes,
+          fn(word: List(#(String, Int, Int))) { show_word(model, word) },
+        ),
       ),
     ),
     ui.button([event.on_click(UserClickedSubmit)], [element.text(button_text)]),
   ])
 }
 
-fn show_char(model: Model, char: #(String, Int), index: Int) {
+fn show_word(model: Model, word: List(#(String, Int, Int))) {
+  ui.cluster(
+    [],
+    list.append(
+      list.map(word, fn(char: #(String, Int, Int)) { show_char(model, char) }),
+      [show_space()],
+    ),
+  )
+}
+
+fn show_char(model: Model, char: #(String, Int, Int)) {
+  let index = char.2
   let background_color = case model.selected_char == char.0 {
     True -> "yellow"
     False -> "none"
@@ -195,4 +211,8 @@ fn show_char(model: Model, char: #(String, Int), index: Int) {
       )
     False -> html.span([], [element.text(char.0)])
   }
+}
+
+fn show_space() -> Element(a) {
+  html.span([attribute.style([#("padding-left", "1em")])], [element.text(" ")])
 }
