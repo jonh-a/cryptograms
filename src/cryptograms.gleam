@@ -1,9 +1,7 @@
 import gleam/int
 import gleam/io
 import gleam/list
-import gleam/option.{None}
 import gleam/string
-import gleam/uri.{type Uri}
 import lustre
 import lustre/attribute
 import lustre/effect.{type Effect}
@@ -11,12 +9,12 @@ import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
 import lustre/ui
-import modem
+import model.{type Model, Model}
 import puzzles.{get_random_answer}
 import util.{
-  check_if_solved, decode, get_initial_route, get_item_at_index,
-  get_last_character, get_space_delimited_char_list_with_indexes,
-  get_unix_time_now, initialize_guess, is_letter,
+  check_if_solved, decode, get_item_at_index, get_last_character,
+  get_space_delimited_char_list_with_indexes, get_unix_time_now,
+  initialize_guess, is_letter, provide_hint,
   replace_all_matching_chars_with_new_char, string_to_letter_frequency,
 }
 
@@ -27,39 +25,9 @@ pub fn main() {
   Nil
 }
 
-type Model {
-  Model(
-    current_route: String,
-    char_list: List(#(String, Int)),
-    space_delimited_char_list_with_indexes: List(List(#(String, Int, Int))),
-    answer: String,
-    guess: List(String),
-    selected_char: String,
-    solved: Bool,
-    start_time: Int,
-    solve_time: Int,
-  )
-}
-
-fn redirect_to_valid_puzzle() -> #(Model, Effect(Msg)) {
-  let puzzle = get_random_answer()
-  #(compute_model(puzzle), modem.push(puzzle, None, None))
-}
-
 fn init(_flags) -> #(Model, Effect(Msg)) {
-  let initial_route = get_initial_route()
-  io.debug(initial_route)
-
-  case initial_route {
-    "localhost:1234" | "cryptograms.usingthe.computer" ->
-      redirect_to_valid_puzzle()
-    _ -> #(compute_model(initial_route), modem.init(on_url_change))
-  }
-}
-
-fn on_url_change(_: Uri) -> Msg {
-  let route = get_initial_route()
-  OnRouteChange(route)
+  let puzzle = get_random_answer()
+  #(compute_model(puzzle), effect.none())
 }
 
 fn handle_button_click(model: Model) -> Model {
@@ -80,12 +48,12 @@ fn handle_button_click(model: Model) -> Model {
   }
 }
 
-fn compute_model(route: String) -> Model {
-  let decoded = decode(route)
+fn compute_model(puzzle: #(String, String)) -> Model {
+  let decoded = decode(puzzle.0) |> string.lowercase()
   let char_list = string_to_letter_frequency(decoded)
 
   Model(
-    current_route: route,
+    author: puzzle.1,
     start_time: get_unix_time_now(),
     char_list: char_list,
     space_delimited_char_list_with_indexes: get_space_delimited_char_list_with_indexes(
@@ -96,6 +64,7 @@ fn compute_model(route: String) -> Model {
     solved: False,
     guess: initialize_guess(char_list),
     answer: decoded,
+    hints: 0,
   )
 }
 
@@ -120,10 +89,29 @@ fn handle_user_focused_character(model: Model, char: String) -> Model {
   Model(..model, selected_char: char)
 }
 
+fn handle_user_clicked_play_another() -> #(Model, Effect(Msg)) {
+  init([])
+}
+
+fn handle_user_requested_hint(model: Model) -> #(Model, Effect(Msg)) {
+  let hint_count = model.hints + 1
+
+  case hint_count < 6 {
+    True -> #(
+      Model(
+        ..model,
+        guess: provide_hint(model.answer, model.guess, hint_count),
+        hints: hint_count,
+      ),
+      effect.none(),
+    )
+    False -> #(model, effect.none())
+  }
+}
+
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
     UserClickedSubmit -> #(handle_button_click(model), effect.none())
-    OnRouteChange(route) -> #(compute_model(route), effect.none())
     UserGuessedCharacter(value, index) -> #(
       handle_user_guessed_character(model, value, index),
       effect.none(),
@@ -132,49 +120,79 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       handle_user_focused_character(model, char),
       effect.none(),
     )
+    UserClickedPlayAnother -> handle_user_clicked_play_another()
+    UserRequestedHint -> handle_user_requested_hint(model)
   }
 }
 
 type Msg {
-  OnRouteChange(String)
   UserClickedSubmit
+  UserClickedPlayAnother
   UserFocusedCharacter(char: String)
   UserGuessedCharacter(value: String, index: Int)
+  UserRequestedHint
 }
 
 fn view(model: Model) -> Element(Msg) {
   io.debug(model)
-  let button_text = case model.solved {
-    True -> "reset"
-    False -> "guess"
+
+  case model.solved {
+    True -> show_solved(model)
+    False -> show_cryptogram(model)
+  }
+}
+
+fn show_solved(model: Model) -> Element(Msg) {
+  let solved_time = model.solve_time - model.start_time
+  ui.centre(
+    [],
+    html.div([], [
+      html.h1([], [element.text(model.answer)]),
+      html.h2([], [
+        element.text("solved in " <> int.to_string(solved_time) <> " seconds"),
+      ]),
+      ui.button([event.on_click(UserClickedPlayAnother)], [
+        element.text("play another"),
+      ]),
+    ]),
+  )
+}
+
+fn show_cryptogram(model: Model) -> Element(Msg) {
+  let hint_button_text = case model.hints < 5 {
+    True -> "hint"
+    False -> ":-("
   }
 
-  show_cryptogram(model, button_text)
-}
-
-fn show_cryptogram(model: Model, button_text: String) {
-  html.div([], [
-    html.h1([], [element.text("Current route: " <> model.answer)]),
-    case model.solved {
-      True -> int.to_string(model.solve_time - model.start_time)
-      False -> ""
-    }
-      |> element.text(),
-    ui.centre(
-      [],
-      ui.cluster(
+  ui.centre(
+    [],
+    html.div([], [
+      html.h1([], [element.text("quote by: " <> model.author)]),
+      case model.solved {
+        True -> int.to_string(model.solve_time - model.start_time)
+        False -> ""
+      }
+        |> element.text(),
+      ui.centre(
         [],
-        list.map(
-          model.space_delimited_char_list_with_indexes,
-          fn(word: List(#(String, Int, Int))) { show_word(model, word) },
+        ui.cluster(
+          [],
+          list.map(
+            model.space_delimited_char_list_with_indexes,
+            fn(word: List(#(String, Int, Int))) { show_word(model, word) },
+          ),
         ),
       ),
-    ),
-    ui.button([event.on_click(UserClickedSubmit)], [element.text(button_text)]),
-  ])
+      ui.button([event.on_click(UserClickedSubmit)], [element.text("guess")]),
+      ui.button(
+        [attribute.disabled(model.hints > 5), event.on_click(UserRequestedHint)],
+        [element.text(hint_button_text)],
+      ),
+    ]),
+  )
 }
 
-fn show_word(model: Model, word: List(#(String, Int, Int))) {
+fn show_word(model: Model, word: List(#(String, Int, Int))) -> Element(Msg) {
   ui.cluster(
     [],
     list.append(
@@ -184,7 +202,7 @@ fn show_word(model: Model, word: List(#(String, Int, Int))) {
   )
 }
 
-fn show_char(model: Model, char: #(String, Int, Int)) {
+fn show_char(model: Model, char: #(String, Int, Int)) -> Element(Msg) {
   let index = char.2
   let background_color = case model.selected_char == char.0 {
     True -> "yellow"
@@ -213,6 +231,6 @@ fn show_char(model: Model, char: #(String, Int, Int)) {
   }
 }
 
-fn show_space() -> Element(a) {
+fn show_space() -> Element(Msg) {
   html.span([attribute.style([#("padding-left", "1em")])], [element.text(" ")])
 }

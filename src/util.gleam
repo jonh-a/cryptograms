@@ -2,9 +2,9 @@ import birl
 import gleam/bit_array
 import gleam/io
 import gleam/list
+import gleam/result
 import gleam/string
 import gleam/uri.{type Uri}
-import modem
 
 pub fn get_unix_time_now() -> Int {
   birl.utc_now()
@@ -16,12 +16,7 @@ pub fn parse_path(uri: Uri) -> String {
   |> uri.to_string()
   |> uri.path_segments()
   |> list.last()
-  |> fn(x) {
-    case x {
-      Ok(i) -> i
-      Error(_) -> ""
-    }
-  }
+  |> result.unwrap("")
 }
 
 pub type Mode {
@@ -40,15 +35,6 @@ pub fn determine_mode_from_uri(uri: Uri) -> Mode {
       Ok("share") -> Share
       Ok(_) | Error(_) -> Play
     }
-  }
-}
-
-pub fn get_initial_route() -> String {
-  let initial_uri = modem.initial_uri()
-
-  case initial_uri {
-    Ok(route) -> parse_path(route)
-    _ -> ""
   }
 }
 
@@ -92,12 +78,7 @@ pub fn get_last_character(string: String) -> String {
   string
   |> string.to_graphemes()
   |> list.last()
-  |> fn(x) {
-    case x {
-      Ok(last) -> last
-      _ -> ""
-    }
-  }
+  |> result.unwrap("")
   |> string.lowercase()
 }
 
@@ -136,7 +117,7 @@ pub fn replace_all_matching_chars_with_new_char(
 }
 
 pub fn check_if_solved(guess: List(String), answer: String) {
-  guess == answer |> string.to_graphemes()
+  guess == answer |> string.lowercase() |> string.to_graphemes()
 }
 
 pub fn get_space_delimited_char_list_with_indexes(
@@ -177,6 +158,7 @@ fn chunk_on_space_helper(
   input_list: List(#(String, Int, Int)),
   acc: List(List(#(String, Int, Int))),
 ) -> List(List(#(String, Int, Int))) {
+  // thanks chatgpt
   case input_list {
     [] -> acc |> list.reverse |> list.map(list.reverse)
     [head, ..tail] ->
@@ -191,4 +173,27 @@ fn chunk_on_space_helper(
         }
       }
   }
+}
+
+pub fn provide_hint(
+  answer: String,
+  guess_chars: List(String),
+  hints: Int,
+) -> List(String) {
+  let hint_letters =
+    ["a", "e", "i", "o", "u"]
+    |> list.take(hints)
+
+  let answer_chars = answer |> string.to_graphemes()
+
+  list.map2(
+    answer_chars,
+    guess_chars,
+    fn(answer_char: String, guess_char: String) {
+      case list.contains(hint_letters, answer_char) {
+        True -> answer_char
+        False -> guess_char
+      }
+    },
+  )
 }
