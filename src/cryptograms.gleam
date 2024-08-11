@@ -1,6 +1,7 @@
 import gleam/int
 import gleam/io
 import gleam/list
+import gleam/result
 import gleam/string
 import lustre
 import lustre/attribute
@@ -14,7 +15,7 @@ import puzzles.{get_random_answer}
 import util.{
   check_if_solved, decode, get_item_at_index, get_last_character,
   get_space_delimited_char_list_with_indexes, get_unix_time_now,
-  initialize_guess, is_letter, provide_hint,
+  initialize_guess, is_letter, move_to_next_field, provide_hint,
   replace_all_matching_chars_with_new_char, string_to_letter_frequency,
 }
 
@@ -69,8 +70,14 @@ fn compute_model(puzzle: #(String, String)) -> Model {
 }
 
 fn handle_user_guessed_character(model: Model, key: String, index: Int) -> Model {
-  io.debug(#(key, index))
-  case key |> get_last_character() |> is_letter(), key {
+  let key_pressed_was_letter = key |> get_last_character() |> is_letter()
+
+  case key_pressed_was_letter {
+    True -> move_to_next_field(index + 1 |> int.to_string())
+    _ -> move_to_next_field(index |> int.to_string())
+  }
+
+  case key_pressed_was_letter, key {
     True, _ | False, "" ->
       Model(
         ..model,
@@ -207,11 +214,17 @@ fn show_cryptogram(model: Model) -> Element(Msg) {
 }
 
 fn show_word(model: Model, word: List(#(String, Int, Int))) -> Element(Msg) {
+  let space_index =
+    word
+    |> list.last()
+    |> result.unwrap(#("", 0, 0))
+    |> fn(x: #(String, Int, Int)) { x.2 }
+
   ui.cluster(
     [],
     list.append(
       list.map(word, fn(char: #(String, Int, Int)) { show_char(model, char) }),
-      [show_space()],
+      [show_space(space_index)],
     ),
   )
 }
@@ -284,6 +297,6 @@ fn show_char_clue(char: #(String, Int, Int)) -> Element(Msg) {
   )
 }
 
-fn show_space() -> Element(Msg) {
+fn show_space(index: Int) -> Element(Msg) {
   html.span([attribute.style([#("padding-left", "1em")])], [element.text(" ")])
 }
