@@ -9,7 +9,7 @@ import lustre/ui
 pub fn show_solved(model: Model) -> Element(Msg) {
   let solved_time = model.solve_time - model.start_time
   ui.centre(
-    [],
+    [event.on_keydown(fn(key: String) { msg.UserPressedKey(key, 0) })],
     html.div([], [
       html.h1([], [element.text(model.answer)]),
       html.h2([], [

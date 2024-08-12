@@ -30,11 +30,12 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       effect.none(),
     )
     msg.UserClickedPlayAnother -> handlers.handle_user_clicked_play_another()
-    msg.UserRequestedHint -> handlers.handle_user_requested_hint(model)
-    msg.UserPressedKey(key, index) -> #(
-      handlers.handle_user_pressed_key(model, key, index),
+    msg.UserRequestedHint -> #(
+      handlers.handle_user_requested_hint(model),
       effect.none(),
     )
+    msg.UserPressedKey(key, index) ->
+      handlers.handle_user_pressed_key(model, key, index)
   }
 }
 

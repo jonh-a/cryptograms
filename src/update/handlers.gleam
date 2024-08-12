@@ -1,6 +1,7 @@
 import data/model.{type Model, Model}
 import data/msg.{type Msg}
 import gleam/int
+import gleam/io
 import gleam/string
 import lustre/effect.{type Effect}
 import puzzles.{get_random_answer}
@@ -77,19 +78,18 @@ pub fn handle_user_clicked_play_another() -> #(Model, Effect(Msg)) {
   init([])
 }
 
-pub fn handle_user_requested_hint(model: Model) -> #(Model, Effect(Msg)) {
+pub fn handle_user_requested_hint(model: Model) -> Model {
   let hint_count = model.hints + 1
 
   case hint_count < 6 {
-    True -> #(
+    True ->
       Model(
         ..model,
         guess: provide_hint(model.answer, model.guess, hint_count),
         hints: hint_count,
-      ),
-      effect.none(),
-    )
-    False -> #(model, effect.none())
+      )
+
+    False -> model
   }
 }
 
@@ -111,7 +111,12 @@ pub fn handle_button_click(model: Model) -> Model {
   }
 }
 
-pub fn handle_user_pressed_key(model: Model, key: String, index: Int) -> Model {
+pub fn handle_user_pressed_key(
+  model: Model,
+  key: String,
+  index: Int,
+) -> #(Model, Effect(Msg)) {
+  io.debug(key)
   let next_input_id = case key {
     "ArrowRight" -> move_to_next_field(index + 1 |> int.to_string())
     "ArrowLeft" -> move_to_previous_field(index |> int.to_string())
@@ -122,7 +127,7 @@ pub fn handle_user_pressed_key(model: Model, key: String, index: Int) -> Model {
     model.answer |> string.to_graphemes() |> get_item_at_index(next_input_id)
 
   case key {
-    "Backspace" ->
+    "Backspace" -> #(
       Model(
         ..model,
         selected_char: new_selected_char,
@@ -132,7 +137,11 @@ pub fn handle_user_pressed_key(model: Model, key: String, index: Int) -> Model {
           index,
           "",
         ),
-      )
-    _ -> Model(..model, selected_char: new_selected_char)
+      ),
+      effect.none(),
+    )
+    "Enter" -> #(handle_button_click(model), effect.none())
+    "]" -> #(handle_user_requested_hint(model), effect.none())
+    _ -> #(Model(..model, selected_char: new_selected_char), effect.none())
   }
 }

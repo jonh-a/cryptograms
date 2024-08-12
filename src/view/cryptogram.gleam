@@ -13,8 +13,8 @@ import util.{get_item_at_index, is_letter}
 
 pub fn show_cryptogram(model: Model) -> Element(Msg) {
   let hint_button_text = case model.hints < 5 {
-    True -> "hint"
-    False -> ":-("
+    True -> "hint (])"
+    False -> "no more"
   }
 
   ui.centre(
@@ -47,7 +47,7 @@ pub fn show_cryptogram(model: Model) -> Element(Msg) {
           ),
         ),
         ui.button([event.on_click(msg.UserClickedSubmit)], [
-          element.text("guess"),
+          element.text("guess (enter)"),
         ]),
         ui.button(
           [

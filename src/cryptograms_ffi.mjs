@@ -20,7 +20,7 @@ export function moveToNextField(nextFieldID) {
       return parseInt(input.id) >= parseInt(nextFieldID)
     });
 
-  inputs[0].focus()
+  inputs?.[0]?.focus()
   return parseInt(inputs[0].id)
 }
 
