@@ -1,7 +1,6 @@
 import data/model.{type Model, Model}
 import data/msg.{type Msg}
 import gleam/int
-import gleam/io
 import gleam/string
 import lustre/effect.{type Effect}
 import puzzles.{get_random_answer}
@@ -94,29 +93,24 @@ pub fn handle_user_requested_hint(model: Model) -> Model {
 }
 
 pub fn handle_button_click(model: Model) -> Model {
-  case model.solved {
-    False ->
-      case check_if_solved(model.guess, model.answer) {
-        True -> Model(..model, solve_time: get_unix_time_now(), solved: True)
-        False -> Model(..model)
-      }
-
-    True ->
-      Model(
-        ..model,
-        start_time: get_unix_time_now(),
-        solve_time: 0,
-        solved: False,
-      )
+  case check_if_solved(model.guess, model.answer) {
+    True -> Model(..model, solve_time: get_unix_time_now(), solved: True)
+    False -> model
   }
 }
 
+/// keydown events triggers for arrow key & enter movement, so
+/// we have a separate handler for it. this also handles replacing
+/// the current highlighted character if a key is provided.
 pub fn handle_user_pressed_key(
   model: Model,
   key: String,
   index: Int,
 ) -> #(Model, Effect(Msg)) {
-  io.debug(key)
+  let should_replace_current_value =
+    key |> is_letter()
+    && string.length(get_item_at_index(model.guess, index)) > 0
+
   let next_input_id = case key {
     "ArrowRight" -> move_to_next_field(index + 1 |> int.to_string())
     "ArrowLeft" -> move_to_previous_field(index |> int.to_string())
@@ -126,8 +120,8 @@ pub fn handle_user_pressed_key(
   let new_selected_char =
     model.answer |> string.to_graphemes() |> get_item_at_index(next_input_id)
 
-  case key {
-    "Backspace" -> #(
+  case key, should_replace_current_value {
+    "Backspace", _ -> #(
       Model(
         ..model,
         selected_char: new_selected_char,
@@ -140,8 +134,21 @@ pub fn handle_user_pressed_key(
       ),
       effect.none(),
     )
-    "Enter" -> #(handle_button_click(model), effect.none())
-    "]" -> #(handle_user_requested_hint(model), effect.none())
-    _ -> #(Model(..model, selected_char: new_selected_char), effect.none())
+    "Enter", _ -> #(handle_button_click(model), effect.none())
+    "]", _ -> #(handle_user_requested_hint(model), effect.none())
+    _, True -> #(
+      Model(
+        ..model,
+        selected_char: new_selected_char,
+        guess: replace_all_matching_chars_with_new_char(
+          model.char_list,
+          model.guess,
+          index,
+          key,
+        ),
+      ),
+      effect.none(),
+    )
+    _, _ -> #(Model(..model, selected_char: new_selected_char), effect.none())
   }
 }
