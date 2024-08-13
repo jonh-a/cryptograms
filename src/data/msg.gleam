@@ -8,5 +8,5 @@ pub type Msg {
   UserGuessedCharacter(value: String, index: Int)
   UserPressedKey(key: String, index: Int)
   UserRequestedHint
-  BackendProvidedResponse(Result(SolutionStatistics, HttpError))
+  BackendProvidedResponse(result: Result(SolutionStatistics, HttpError))
 }

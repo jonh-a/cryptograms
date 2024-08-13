@@ -3,38 +3,10 @@ import gleam/bit_array
 import gleam/list
 import gleam/result
 import gleam/string
-import gleam/uri.{type Uri}
 
 pub fn get_unix_time_now() -> Int {
   birl.utc_now()
   |> birl.to_unix()
-}
-
-pub fn parse_path(uri: Uri) -> String {
-  uri
-  |> uri.to_string()
-  |> uri.path_segments()
-  |> list.last()
-  |> result.unwrap("")
-}
-
-pub type Mode {
-  Play
-  Share
-}
-
-pub fn determine_mode_from_uri(uri: Uri) -> Mode {
-  uri
-  |> uri.to_string()
-  |> uri.path_segments()
-  |> list.first()
-  |> fn(x) {
-    case x {
-      Ok("play") -> Play
-      Ok("share") -> Share
-      Ok(_) | Error(_) -> Play
-    }
-  }
 }
 
 pub fn decode(string: String) -> String {
@@ -92,6 +64,8 @@ pub fn get_item_at_index(l: List(String), index: Int) -> String {
   }
 }
 
+/// when one field is highlighted, the fields of all matching characters should
+/// be highlighted as well
 pub fn find_indexes_of_matching_chars(
   answer_list: List(#(String, Int)),
   index: Int,
@@ -104,6 +78,8 @@ pub fn find_indexes_of_matching_chars(
   |> list.key_filter(indexed_char)
 }
 
+/// when one character is updated in the puzzle, all matching instances
+/// should be updated as well
 pub fn replace_all_matching_chars_with_new_char(
   answer_list: List(#(String, Int)),
   guess: List(String),
@@ -123,6 +99,9 @@ pub fn check_if_solved(guess: List(String), answer: String) {
   guess == answer |> string.lowercase() |> string.to_graphemes()
 }
 
+/// converts a list of tuples containing characters + frequency into a
+/// list of tuples containing characters + frequency + index and chunks
+/// them by space
 pub fn get_space_delimited_char_list_with_indexes(
   char_list: List(#(String, Int)),
 ) -> List(List(#(String, Int, Int))) {
@@ -161,7 +140,8 @@ fn chunk_on_space_helper(
   input_list: List(#(String, Int, Int)),
   acc: List(List(#(String, Int, Int))),
 ) -> List(List(#(String, Int, Int))) {
-  // thanks chatgpt
+  // I tried and failed to figure this out myself for close to an hour
+  // ...so thanks chatgpt
   case input_list {
     [] -> acc |> list.reverse |> list.map(list.reverse)
     [head, ..tail] ->
@@ -201,6 +181,8 @@ pub fn provide_hint(
   )
 }
 
+/// returns a tuple of each alphabet character and another randomly
+/// assigned alphabet character
 pub fn shuffle_alphabet() -> List(#(String, String)) {
   let alphabet = alphabet()
   let shuffled = list.shuffle(alphabet)

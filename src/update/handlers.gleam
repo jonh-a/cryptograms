@@ -1,8 +1,7 @@
 import data/model.{type Model, type SolutionStatistics, Model}
 import data/msg.{type Msg}
 import gleam/int
-import gleam/io
-import gleam/option.{type Option, None, Some}
+import gleam/option.{None, Some}
 import gleam/string
 import http.{submit_solve_statistics}
 import lustre/effect.{type Effect}
@@ -163,10 +162,9 @@ pub fn handle_user_pressed_key(
 
 pub fn handle_backend_provided_response(
   model: Model,
-  response: Result(SolutionStatistics, HttpError),
+  result: Result(SolutionStatistics, HttpError),
 ) {
-  io.debug(response)
-  case response {
+  case result {
     Ok(result) -> Model(..model, solution_statistics: Some(result))
     Error(_) -> Model(..model, solution_statistics: None)
   }
