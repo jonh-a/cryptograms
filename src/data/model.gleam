@@ -1,3 +1,5 @@
+import gleam/option.{type Option}
+
 pub type Model {
   Model(
     author: String,
@@ -17,5 +19,10 @@ pub type Model {
     // number of hints used
     hints: Int,
     shuffled_alphabet: List(#(String, String)),
+    solution_statistics: Option(SolutionStatistics),
   )
+}
+
+pub type SolutionStatistics {
+  SolutionStatistics(quote: String, average_solve_time: Int)
 }

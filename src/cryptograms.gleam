@@ -17,10 +17,7 @@ pub fn main() {
 
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
-    msg.UserClickedSubmit -> #(
-      handlers.handle_button_click(model),
-      effect.none(),
-    )
+    msg.UserClickedSubmit -> handlers.handle_button_click(model)
     msg.UserGuessedCharacter(value, index) -> #(
       handlers.handle_user_guessed_character(model, value, index),
       effect.none(),
@@ -36,6 +33,10 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     )
     msg.UserPressedKey(key, index) ->
       handlers.handle_user_pressed_key(model, key, index)
+    msg.BackendProvidedResponse(result) -> #(
+      handlers.handle_backend_provided_response(model, result),
+      effect.none(),
+    )
   }
 }
 
