@@ -1,8 +1,12 @@
-import data/model.{type Model, Model}
+import data/model.{type Model, type SolutionStatistics, Model}
 import data/msg.{type Msg}
 import gleam/int
+import gleam/io
+import gleam/option.{type Option, None, Some}
 import gleam/string
+import http.{submit_solve_statistics}
 import lustre/effect.{type Effect}
+import lustre_http.{type HttpError}
 import puzzles.{get_random_answer}
 import util.{
   check_if_solved, decode, get_item_at_index, get_last_character,
@@ -35,6 +39,7 @@ pub fn compute_model(puzzle: #(String, String)) -> Model {
     answer: decoded,
     hints: 0,
     shuffled_alphabet: shuffle_alphabet(),
+    solution_statistics: None,
   )
 }
 
@@ -92,10 +97,13 @@ pub fn handle_user_requested_hint(model: Model) -> Model {
   }
 }
 
-pub fn handle_button_click(model: Model) -> Model {
+pub fn handle_button_click(model: Model) -> #(Model, Effect(Msg)) {
   case check_if_solved(model.guess, model.answer) {
-    True -> Model(..model, solve_time: get_unix_time_now(), solved: True)
-    False -> model
+    True -> #(
+      Model(..model, solve_time: get_unix_time_now(), solved: True),
+      submit_solve_statistics(model),
+    )
+    False -> #(model, effect.none())
   }
 }
 
@@ -134,7 +142,7 @@ pub fn handle_user_pressed_key(
       ),
       effect.none(),
     )
-    "Enter", _ -> #(handle_button_click(model), effect.none())
+    "Enter", _ -> handle_button_click(model)
     "]", _ -> #(handle_user_requested_hint(model), effect.none())
     _, True -> #(
       Model(
@@ -150,5 +158,16 @@ pub fn handle_user_pressed_key(
       effect.none(),
     )
     _, _ -> #(Model(..model, selected_char: new_selected_char), effect.none())
+  }
+}
+
+pub fn handle_backend_provided_response(
+  model: Model,
+  response: Result(SolutionStatistics, HttpError),
+) {
+  io.debug(response)
+  case response {
+    Ok(result) -> Model(..model, solution_statistics: Some(result))
+    Error(_) -> Model(..model, solution_statistics: None)
   }
 }
