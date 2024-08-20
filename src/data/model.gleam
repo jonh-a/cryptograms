@@ -24,5 +24,5 @@ pub type Model {
 }
 
 pub type SolutionStatistics {
-  SolutionStatistics(quote: String, average_solve_time: Int)
+  SolutionStatistics(puzzle: String, average: Int, time: Int)
 }

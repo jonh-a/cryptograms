@@ -1,4 +1,4 @@
-import data/model.{type Model, Model}
+import data/model.{type Model, type SolutionStatistics, Model}
 import data/msg.{type Msg}
 import gleam/int
 import gleam/option.{None, Some}
@@ -27,16 +27,24 @@ pub fn show_solved(model: Model) -> Element(Msg) {
   )
 }
 
+fn compared_to_average(stats: SolutionStatistics) -> String {
+  case stats {
+    stats if stats.time > stats.average -> "you were slower than average."
+    stats if stats.time == stats.average -> "you were average."
+    stats if stats.time < stats.average -> "you were faster than average."
+    _ -> ""
+  }
+}
+
 fn show_solution_statistics(model: Model) -> Element(Msg) {
-  html.div([], [
-    case model.solution_statistics {
-      Some(result) ->
+  case model.solution_statistics {
+    Some(result) ->
+      html.div([], [
         html.h2([], [
-          element.text(
-            "average time: " <> result.average_solve_time |> int.to_string(),
-          ),
-        ])
-      None -> html.h2([], [])
-    },
-  ])
+          element.text("average time: " <> result.average |> int.to_string()),
+        ]),
+        html.h2([], [element.text(compared_to_average(result))]),
+      ])
+    None -> html.h2([], [])
+  }
 }

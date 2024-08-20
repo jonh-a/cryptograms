@@ -1,6 +1,5 @@
 import data/model.{type Model, Model}
 import data/msg.{type Msg}
-import gleam/io
 import lustre
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
@@ -41,8 +40,6 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 }
 
 fn view(model: Model) -> Element(Msg) {
-  io.debug(model)
-
   case model.solved {
     True -> show_solved(model)
     False -> show_cryptogram(model)
