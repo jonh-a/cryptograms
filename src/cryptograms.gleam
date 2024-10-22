@@ -1,8 +1,11 @@
 import data/model.{type Model, Model}
 import data/msg.{type Msg}
 import lustre
+import lustre/attribute
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
+import lustre/element/html
+import lustre/ui
 import update/handlers
 import view/cryptogram.{show_cryptogram}
 import view/solved.{show_solved}
@@ -40,8 +43,17 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 }
 
 fn view(model: Model) -> Element(Msg) {
-  case model.solved {
-    True -> show_solved(model)
-    False -> show_cryptogram(model)
-  }
+  ui.centre(
+    [
+      attribute.style([
+        #("height", "100%"),
+        #("width", "100%"),
+        #("position", "absolute"),
+      ]),
+    ],
+    case model.solved {
+      True -> show_solved(model)
+      False -> show_cryptogram(model)
+    },
+  )
 }

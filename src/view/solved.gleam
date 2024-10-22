@@ -3,6 +3,7 @@ import data/msg.{type Msg}
 import gleam/int
 import gleam/option.{None, Some}
 import http.{submit_solve_statistics}
+import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
@@ -12,18 +13,30 @@ pub fn show_solved(model: Model) -> Element(Msg) {
   let solved_time = model.solve_time - model.start_time
   submit_solve_statistics(model)
 
-  ui.centre(
-    [event.on_keydown(fn(key: String) { msg.UserPressedKey(key, 0) })],
-    html.div([], [
-      html.h1([], [element.text(model.answer)]),
-      html.h2([], [
-        element.text("solved in " <> int.to_string(solved_time) <> " seconds"),
+  html.div(
+    [
+      attribute.style([
+        #("min-height", "100%"),
+        #("display", "flex"),
+        #("justify-content", "center"),
+        #("align-items", "center"),
+        #("border", "1px solid red"),
       ]),
-      show_solution_statistics(model),
-      ui.button([event.on_click(msg.UserClickedPlayAnother)], [
-        element.text("play another"),
+      event.on_keydown(fn(key: String) { msg.UserPressedKey(key, 0) }),
+    ],
+    [
+      html.div([], [
+        html.h1([], [element.text("\"" <> model.answer <> "\"")]),
+        html.h1([], [element.text(" - " <> model.author)]),
+        html.h2([], [
+          element.text("solved in " <> int.to_string(solved_time) <> " seconds"),
+        ]),
+        show_solution_statistics(model),
+        ui.button([event.on_click(msg.UserClickedPlayAnother)], [
+          element.text("play another"),
+        ]),
       ]),
-    ]),
+    ],
   )
 }
 

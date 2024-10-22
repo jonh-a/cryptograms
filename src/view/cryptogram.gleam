@@ -12,51 +12,44 @@ import lustre/ui
 import util.{get_item_at_index, is_letter}
 
 pub fn show_cryptogram(model: Model) -> Element(Msg) {
-  let hint_button_text = case model.hints < 5 {
-    True -> "hint (])"
-    False -> "no more"
-  }
-
   ui.centre(
     [attribute.style([#("display", "flex")])],
     html.div(
       [attribute.style([#("padding-left", "3em"), #("padding-right", "3em")])],
       [
-        html.h1(
-          [
-            attribute.style([
-              #("margin-left", "auto"),
-              #("margin-right", "auto"),
-            ]),
-          ],
-          [element.text("quote by: " <> model.author)],
-        ),
-        case model.solved {
-          True -> int.to_string(model.solve_time - model.start_time)
-          False -> ""
-        }
-          |> element.text(),
-        ui.centre(
-          [],
-          ui.cluster(
-            [],
-            list.map(
-              model.space_delimited_char_list_with_indexes,
-              fn(word: List(#(String, Int, Int))) { show_word(model, word) },
-            ),
-          ),
-        ),
-        ui.button([event.on_click(msg.UserClickedSubmit)], [
-          element.text("guess (enter)"),
-        ]),
-        ui.button(
-          [
-            attribute.disabled(model.hints > 5),
-            event.on_click(msg.UserRequestedHint),
-          ],
-          [element.text(hint_button_text)],
-        ),
+        show_header(model),
+        show_time(model),
+        show_words(model),
+        show_buttons(model),
       ],
+    ),
+  )
+}
+
+fn show_header(model: Model) -> Element(Msg) {
+  html.h1(
+    [attribute.style([#("margin-left", "auto"), #("margin-right", "auto")])],
+    [element.text("quote by: " <> model.author)],
+  )
+}
+
+fn show_time(model: Model) -> Element(Msg) {
+  case model.solved {
+    True -> int.to_string(model.solve_time - model.start_time)
+    False -> ""
+  }
+  |> element.text()
+}
+
+fn show_words(model: Model) -> Element(Msg) {
+  ui.centre(
+    [],
+    ui.cluster(
+      [],
+      list.map(
+        model.space_delimited_char_list_with_indexes,
+        fn(word: List(#(String, Int, Int))) { show_word(model, word) },
+      ),
     ),
   )
 }
@@ -161,4 +154,27 @@ fn show_char_clue(model: Model, char: #(String, Int, Int)) -> Element(Msg) {
 
 fn show_space() -> Element(Msg) {
   html.span([attribute.style([#("padding-left", "1em")])], [element.text(" ")])
+}
+
+fn show_buttons(model: Model) -> Element(Msg) {
+  let hint_button_text = case model.hints < 5 {
+    True -> "hint (])"
+    False -> "no more"
+  }
+
+  html.div(
+    [attribute.style([#("border", "1px solid red"), #("width", "80%")])],
+    [
+      ui.button([event.on_click(msg.UserClickedSubmit)], [
+        element.text("guess (enter)"),
+      ]),
+      ui.button(
+        [
+          attribute.disabled(model.hints > 5),
+          event.on_click(msg.UserRequestedHint),
+        ],
+        [element.text(hint_button_text)],
+      ),
+    ],
+  )
 }

@@ -42,6 +42,31 @@ pub fn compute_model(puzzle: #(String, String)) -> Model {
   )
 }
 
+pub fn handle_user_requested_hint(model: Model) -> Model {
+  let hint_count = model.hints + 1
+
+  case hint_count < 6 {
+    True ->
+      Model(
+        ..model,
+        guess: provide_hint(model.answer, model.guess, hint_count),
+        hints: hint_count,
+      )
+
+    False -> model
+  }
+}
+
+pub fn handle_button_click(model: Model) -> #(Model, Effect(Msg)) {
+  case check_if_solved(model.guess, model.answer) {
+    True -> #(
+      Model(..model, solve_time: get_unix_time_now(), solved: True),
+      submit_solve_statistics(model),
+    )
+    False -> #(model, effect.none())
+  }
+}
+
 pub fn handle_user_guessed_character(
   model: Model,
   key: String,
@@ -70,39 +95,6 @@ pub fn handle_user_guessed_character(
         ),
       )
     False, _ -> Model(..model)
-  }
-}
-
-pub fn handle_user_focused_character(model: Model, char: String) -> Model {
-  Model(..model, selected_char: char)
-}
-
-pub fn handle_user_clicked_play_another() -> #(Model, Effect(Msg)) {
-  init([])
-}
-
-pub fn handle_user_requested_hint(model: Model) -> Model {
-  let hint_count = model.hints + 1
-
-  case hint_count < 6 {
-    True ->
-      Model(
-        ..model,
-        guess: provide_hint(model.answer, model.guess, hint_count),
-        hints: hint_count,
-      )
-
-    False -> model
-  }
-}
-
-pub fn handle_button_click(model: Model) -> #(Model, Effect(Msg)) {
-  case check_if_solved(model.guess, model.answer) {
-    True -> #(
-      Model(..model, solve_time: get_unix_time_now(), solved: True),
-      submit_solve_statistics(model),
-    )
-    False -> #(model, effect.none())
   }
 }
 
@@ -158,6 +150,14 @@ pub fn handle_user_pressed_key(
     )
     _, _ -> #(Model(..model, selected_char: new_selected_char), effect.none())
   }
+}
+
+pub fn handle_user_focused_character(model: Model, char: String) -> Model {
+  Model(..model, selected_char: char)
+}
+
+pub fn handle_user_clicked_play_another() -> #(Model, Effect(Msg)) {
+  init([])
 }
 
 pub fn handle_backend_provided_response(
